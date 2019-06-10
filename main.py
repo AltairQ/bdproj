@@ -1,10 +1,21 @@
-# import pg8000
 import sys
 import json
+import re
+import pg8000
+
 
 # global DB handle
 _glob_db_handle = None
 _glob_is_init = False
+
+# extract SQL statement template from the model file
+def _xsql(tokname):
+	with open("model.sql", "r") as f:
+		whole = f.read()
+		needle = f"--SQL_{tokname}_START((.|\s)*)--SQL_{tokname}_END"
+		res = re.search(needle, whole)
+		return(res.group(1).strip())
+
 
 def oopen():
 	pass
