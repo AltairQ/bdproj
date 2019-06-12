@@ -17,37 +17,37 @@ def _xsql(tokname):
 		return(res.group(1).strip())
 
 
-def oopen():
+def oopen(kvp):
 	pass
 
-def leader():
+def leader(kvp):
 	pass
 
-def support():
+def support(kvp):
 	pass
 
-def protest():
+def protest(kvp):
 	pass
 
-def upvote():
+def upvote(kvp):
 	pass
 
-def downvote():
+def downvote(kvp):
 	pass
 
-def actions():
+def actions(kvp):
 	pass
 
-def projects():
+def projects(kvp):
 	pass
 
-def votes():
+def votes(kvp):
 	pass
 
-def trolls():
+def trolls(kvp):
 	pass
 
-def init():
+def init(kvp):
 	pass
 
 def _ret_error(s):
@@ -73,6 +73,7 @@ _glob_func_dict = {
 	"trolls" : trolls
 }
 
+# translate action type into appropriate handler
 def a2f(action):
 	return _glob_func_dict.get(action, 
 		lambda x : _ret_error("unknown action!"))
@@ -82,15 +83,15 @@ def main():
 	for l in sys.stdin:
 		line = l.rstrip()
 		try:
-			obj = json.loads(line)
-			act = next(iter(obj))
-			(a2f(act))(obj[act])
+			obj = json.loads(line) # safe from code injection
+			act = next(iter(obj)) # extract "action" attr
+			(a2f(act))(obj[act]) # execute handler
 		except Exception as e:
 			_ret_error(str(e))
 
 
 if __name__ == '__main__':
-	if "--init" in sys.argv:
+	if "--init" in sys.argv: # check if init mode is set
 		_glob_is_init = True
 		print("--- INIT ENGAGED ---")
 	main()
