@@ -1,0 +1,1 @@
+{ "open": { "database": "student", "login": "init", "password": "qwerty"}}

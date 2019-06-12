@@ -5,7 +5,7 @@ import pg8000
 
 
 # global DB handle
-_glob_db_handle = None
+_glob_db = None
 _glob_is_init = False
 
 # extract SQL statement template from the model file
@@ -16,9 +16,26 @@ def _xsql(tokname):
 		res = re.search(needle, whole)
 		return(res.group(1).strip())
 
+def _init(kvp):
+	pg8000.paramstyle = "format"
+	cur = _glob_db.cursor()
+	# very ugly but it can't be parametrized
+	# besides, at this point the user already knows init password
+	# todo fix?
+	tmp = f"CREATE ROLE app WITH PASSWORD '{kvp['password']}' NOCREATEDB NOCREATEROLE LOGIN;"
+	cur.execute(tmp)
+	cur.execute(_xsql("CREATE_TB_USEDIDS"))
+	cur.execute(_xsql("CREATE_TESTFUNC"))
+	cur.execute(_xsql("GRANTEX_TESTFUNC"))	
+	_glob_db.commit()
+	cur.close()
+	pass
+
 
 def oopen(kvp):
-	pass
+	_open_conn(kvp["login"], kvp["password"], kvp["database"])
+	if _glob_is_init:
+		_init(kvp)
 
 def leader(kvp):
 	pass
@@ -47,15 +64,15 @@ def votes(kvp):
 def trolls(kvp):
 	pass
 
-def init(kvp):
-	pass
-
 def _ret_error(s):
 	print(json.dumps({"status":"ERROR","debug": s}))
 
-def _open_conn(user, pswd):
+# connect to psql server @localhost
+def _open_conn(user, pswd, db):
 	try:
-		_glob_db_handle = pg8000.connect(user=user, password=pswd)
+		global _glob_db
+		_glob_db = pg8000.connect(user=user, password=pswd, database=db)
+		print("* opened db", file=sys.stderr)
 	except Exception as e:
 		_ret_error(str(e))
 
