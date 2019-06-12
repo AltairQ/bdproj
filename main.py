@@ -17,8 +17,10 @@ def _xsql(tokname):
 		return(res.group(1).strip())
 
 def _init(kvp):
+	# this is the default
 	pg8000.paramstyle = "format"
 	cur = _glob_db.cursor()
+	
 	# very ugly but it can't be parametrized
 	# besides, at this point the user already knows init password
 	# todo fix?
