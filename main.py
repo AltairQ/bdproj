@@ -36,6 +36,11 @@ def _init(kvp):
 	tmp = f"CREATE ROLE app WITH PASSWORD '{kvp['password']}' NOCREATEDB NOCREATEROLE LOGIN;"
 	cur.execute(tmp)
 
+	# install pgcrypto
+	# only in debug mode because it requires SUPERUSER role
+	if _glob_debug:
+		cur.execute(_xsql("INSTALL_PGCRYPTO"))
+
 	# create tables
 	cur.execute(_xsql("CREATE_TB_USEDIDS"))
 	cur.execute(_xsql("CREATE_TB_MEMBERS"))
@@ -43,7 +48,7 @@ def _init(kvp):
 	cur.execute(_xsql("CREATE_TB_ACTIONS"))
 	cur.execute(_xsql("CREATE_TB_PROJECTS"))
 
-	# create functions
+	# create trigger functions
 	cur.execute(_xsql("CREATE_TRP_PROJECTS"))
 	cur.execute(_xsql("CREATE_TRP_ACTIONS"))
 	cur.execute(_xsql("CREATE_TRP_MEMBERS"))
@@ -54,6 +59,15 @@ def _init(kvp):
 	cur.execute(_xsql("CREATE_TR_ACTIONS"))
 	cur.execute(_xsql("CREATE_TR_MEMBERS"))
 	cur.execute(_xsql("CREATE_TR_VOTES"))
+
+	# create helper functions
+	cur.execute(_xsql("CREATE_PRIV_CREATEUSER"))
+
+	# create api functions
+	cur.execute(_xsql("CREATE_API_LEADER"))
+
+	# grant execute permissions
+	cur.execute(_xsql("GRANTEX_API_LEADER"))
 
 	_glob_db.commit()
 	cur.close()

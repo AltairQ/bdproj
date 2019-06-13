@@ -30,7 +30,7 @@ CREATE TABLE used_ids (
 --SQL_CREATE_TB_MEMBERS_START
 CREATE TABLE IF NOT EXISTS members(
 	id integer PRIMARY KEY,
-	password VARCHAR(255) NOT NULL,
+	password text NOT NULL,
 	status integer NOT NULL DEFAULT 2,
 	upvotes integer NOT NULL DEFAULT 0,
 	downvotes integer NOT NULL DEFAULT 0,
@@ -39,6 +39,10 @@ CREATE TABLE IF NOT EXISTS members(
 --SQL_CREATE_TB_MEMBERS_END
 
 -- BELOW TODO: FOREIGN KEYS
+
+--SQL_INSTALL_PGCRYPTO_START
+CREATE EXTENSION pgcrypto;
+--SQL_INSTALL_PGCRYPTO_END
 
 
 --SQL_CREATE_TB_VOTES_START
@@ -157,7 +161,7 @@ RETURNS integer AS $$
 		END IF;
 
 		SELECT status, last_active INTO res_stat, res_time FROM
-		members where id = iid AND password = crypt(pswd, password);
+		members where id = iid AND password = crypt(pswd::text, password);
 
 		IF res_stat IS NOT NULL THEN
 			IF date_part('year', age(tstamp, last_active)) >= 1 THEN
@@ -168,8 +172,24 @@ RETURNS integer AS $$
 		END IF;
 
 		INSERT INTO members (id, password, status, last_active) VALUES
-		(iid, crypt(pswd, gen_salt('bf', 9)), tmp_stat, tstamp);
+		(iid, crypt(pswd::text, gen_salt('bf', 9)), tmp_stat, tstamp);
+		
+		RETURN tmp_stat;
 	END;
-$$ LANGUGAGE plpgsql;
+$$ LANGUAGE plpgsql;
 --SQL_CREATE_PRIV_CREATEUSER_END
 
+--SQL_CREATE_API_LEADER_START
+CREATE FUNCTION api_leader(ts timestamp, pswd varchar, mem integer) 
+RETURNS void AS $$
+BEGIN
+	PERFORM pcreateuser(mem, pswd, TRUE, ts);
+	RETURN;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+--SQL_CREATE_API_LEADER_END
+
+--SQL_GRANTEX_API_LEADER_START
+GRANT EXECUTE ON FUNCTION api_leader(ts timestamp, pswd varchar, mem integer) 
+TO app;
+--SQL_GRANTEX_API_LEADER_END
