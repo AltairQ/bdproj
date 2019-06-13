@@ -143,10 +143,13 @@ FOR EACH ROW EXECUTE PROCEDURE votes_trig();
 --SQL_CREATE_TR_VOTES_END
 
 
-
+-- Internal function for creating and validating users
+-- mustcreate flag causes it to raise exception when
+-- trying to create an user (only leader api)
 
 --SQL_CREATE_PRIV_CREATEUSER_START
-CREATE FUNCTION pcreateuser(iid integer, pswd varchar, is_leader boolean, tstamp timestamp)
+CREATE FUNCTION pcreateuser(iid integer, pswd text, is_leader boolean,
+	tstamp timestamp, mustcreate boolean)
 RETURNS integer AS $$
 	DECLARE
 	res_stat integer;
@@ -161,10 +164,14 @@ RETURNS integer AS $$
 		END IF;
 
 		SELECT status, last_active INTO res_stat, res_time FROM
-		members where id = iid AND password = crypt(pswd::text, password);
+		members where id = iid AND password = crypt(pswd, password);
 
 		IF res_stat IS NOT NULL THEN
-			IF date_part('year', age(tstamp, last_active)) >= 1 THEN
+			IF mustcreate = TRUE THEN
+				RAISE EXCEPTION 'User (%) already exists', iid;
+			END IF;
+
+			IF date_part('year', age(tstamp, res_time)) >= 1 THEN
 				RETURN 0;
 			ELSE
 				RETURN res_stat;
@@ -172,24 +179,25 @@ RETURNS integer AS $$
 		END IF;
 
 		INSERT INTO members (id, password, status, last_active) VALUES
-		(iid, crypt(pswd::text, gen_salt('bf', 9)), tmp_stat, tstamp);
-		
+		(iid, crypt(pswd, gen_salt('bf', 9)), tmp_stat, tstamp);
+
 		RETURN tmp_stat;
 	END;
 $$ LANGUAGE plpgsql;
 --SQL_CREATE_PRIV_CREATEUSER_END
 
 --SQL_CREATE_API_LEADER_START
-CREATE FUNCTION api_leader(ts timestamp, pswd varchar, mem integer) 
+CREATE FUNCTION api_leader(epo integer, pswd text, mem integer) 
 RETURNS void AS $$
 BEGIN
-	PERFORM pcreateuser(mem, pswd, TRUE, ts);
+	PERFORM pcreateuser(mem, pswd, TRUE, 
+		to_timestamp(epo)::timestamp without time zone, TRUE);
 	RETURN;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 --SQL_CREATE_API_LEADER_END
 
 --SQL_GRANTEX_API_LEADER_START
-GRANT EXECUTE ON FUNCTION api_leader(ts timestamp, pswd varchar, mem integer) 
+GRANT EXECUTE ON FUNCTION api_leader(epo integer, pswd text, mem integer) 
 TO app;
 --SQL_GRANTEX_API_LEADER_END
