@@ -7,20 +7,29 @@ import pg8000
 # global DB handle
 _glob_db = None
 _glob_is_init = False
+_glob_debug = False
+
+
+# helper function for printing debug messages
+def log(s):
+	if(_glob_debug):
+		print(s, file=sys.stderr)
+
 
 # extract SQL statement template from the model file
 def _xsql(tokname):
+	log("* xsql: " + tokname)
 	with open("model.sql", "r") as f:
 		whole = f.read()
-		needle = f"--SQL_{tokname}_START((.|\s)*)--SQL_{tokname}_END"
-		res = re.search(needle, whole)
+		needle = f"^--SQL_{tokname}_START((.|\s)*?)--SQL_{tokname}_END"
+		res = re.search(needle, whole, flags=re.MULTILINE)
 		return(res.group(1).strip())
 
 def _init(kvp):
 	# this is the default
 	pg8000.paramstyle = "format"
 	cur = _glob_db.cursor()
-	
+
 	# very ugly but it can't be parametrized
 	# besides, at this point the user already knows init password
 	# todo fix?
@@ -74,7 +83,7 @@ def _open_conn(user, pswd, db):
 	try:
 		global _glob_db
 		_glob_db = pg8000.connect(user=user, password=pswd, database=db)
-		print("* opened db", file=sys.stderr)
+		log("* opened db connection")
 	except Exception as e:
 		_ret_error(str(e))
 
@@ -110,7 +119,11 @@ def main():
 
 
 if __name__ == '__main__':
+	if "--debug" in sys.argv:
+		_glob_debug = True
+		log("* debug on")
 	if "--init" in sys.argv: # check if init mode is set
 		_glob_is_init = True
-		print("--- INIT ENGAGED ---")
+		log("* init on")
+		
 	main()
