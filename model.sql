@@ -320,9 +320,9 @@ TO app;
 
 --SQL_CREATE_API_ACTIONS_START
 CREATE FUNCTION api_actions(epo integer, memid integer, pswd text,
-	ftype text, fpid integer, fauth integer) 
+	ftype integer, fpid integer, fauth integer) 
 RETURNS TABLE (action integer, type integer, project integer, 
-	authority integer, upvotes integer, downvotes integer)
+	authority integer, upvotes bigint, downvotes bigint)
 AS $$
 BEGIN
 	IF pcreateuser(memid, pswd, FALSE, 
@@ -351,9 +351,38 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 --SQL_GRANTEX_API_ACTIONS_START
 GRANT EXECUTE ON FUNCTION api_actions(epo integer, memid integer, pswd text,
-	ftype text, fpid integer, fauth integer) 
+	ftype integer, fpid integer, fauth integer) 
 TO app;
 --SQL_GRANTEX_API_ACTIONS_END
+
+--SQL_CREATE_API_PROJECTS_START
+CREATE FUNCTION api_projects(epo integer, memid integer, pswd text,
+	authid integer)
+RETURNS TABLE (project integer, authority integer) AS $$
+BEGIN
+	IF pcreateuser(memid, pswd, FALSE, 
+		to_timestamp(epo)::timestamp without time zone, FALSE) <> 1 THEN
+		RAISE EXCEPTION 'User (%) frozen or not leader', memid;
+	END IF;
+
+	RETURN QUERY
+		SELECT projects.id, projects.authority
+		FROM projects
+		WHERE
+			(projects.authority = authid or authid IS NULL)
+		ORDER BY projects.id ASC;
+
+	RETURN;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+--SQL_CREATE_API_PROJECTS_END
+
+--SQL_GRANTEX_API_PROJECTS_START
+GRANT EXECUTE ON FUNCTION api_projects(epo integer, memid integer, pswd text,
+	authid integer)
+TO app;
+--SQL_GRANTEX_API_PROJECTS_END
+
 
 
 --SQL_EXECUTE_API_LEADER_START
@@ -392,3 +421,22 @@ SELECT * FROM api_downvote( %s ::integer,
  %s ::text,
  %s ::integer);
 --SQL_EXECUTE_API_DOWNVOTE_END
+
+--SQL_EXECUTE_API_ACTIONS_START
+SELECT * FROM api_actions( %s :: integer,
+ %s :: integer,
+ %s :: text,
+ %s :: integer,
+ %s :: integer,
+ %s :: integer);
+--SQL_EXECUTE_API_ACTIONS_END
+
+
+--SQL_EXECUTE_API_PROJECTS_START
+SELECT * FROM api_projects( %s ::integer,
+ %s ::integer,
+ %s ::text,
+ %s ::integer);
+--SQL_EXECUTE_API_PROJECTS_END
+
+

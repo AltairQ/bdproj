@@ -72,6 +72,7 @@ def _init(kvp):
 	cur.execute(_xsql("CREATE_API_UPVOTE"))
 	cur.execute(_xsql("CREATE_API_DOWNVOTE"))
 	cur.execute(_xsql("CREATE_API_ACTIONS"))
+	cur.execute(_xsql("CREATE_API_PROJECTS"))
 
 	# grant execute permissions
 	cur.execute(_xsql("GRANTEX_API_LEADER"))
@@ -80,6 +81,7 @@ def _init(kvp):
 	cur.execute(_xsql("GRANTEX_API_UPVOTE"))
 	cur.execute(_xsql("GRANTEX_API_DOWNVOTE"))
 	cur.execute(_xsql("GRANTEX_API_ACTIONS"))
+	cur.execute(_xsql("GRANTEX_API_PROJECTS"))
 
 	_glob_db.commit()
 	cur.close()
@@ -164,10 +166,51 @@ def downvote(kvp):
 	cur.close()
 
 def actions(kvp):
-	pass
+	cur = _glob_db.cursor()
+
+	arg_type = kvp.get("type", None)
+
+	if arg_type:
+		if arg_type == "support":
+			arg_type = 1
+		elif arg_type == "protest":
+			arg_type = 0
+		else:
+			arg_type = None
+
+	cur.execute(_xsql("EXECUTE_API_ACTIONS"),
+			(kvp["timestamp"],
+			kvp["member"],
+			kvp["password"],
+			arg_type,
+			kvp.get("project", None),
+			kvp.get("authority", None) ))
+
+	res = cur.fetchall()
+
+	for row in res:
+		row[1] = "support" if row[1] == 1 else "protest"
+
+	_ret_data(res)
+
+	_glob_db.commit()
+	cur.close()
 
 def projects(kvp):
-	pass
+	cur = _glob_db.cursor()
+
+	cur.execute(_xsql("EXECUTE_API_PROJECTS"),
+			(kvp["timestamp"],
+			kvp["member"],
+			kvp["password"],
+			kvp.get("authority", None) ))
+
+	res = cur.fetchall()
+	_ret_data(res)
+
+	_glob_db.commit()
+	cur.close()
+
 
 def votes(kvp):
 	pass
@@ -180,6 +223,11 @@ def _ret_error(s):
 
 def _ret_ok():
 	print(json.dumps({"status":"OK"}))
+
+def _ret_data(d):
+	print(json.dumps({"status":"OK", "data":d}))
+
+
 
 # connect to psql server @localhost
 def _open_conn(user, pswd, db):
@@ -209,6 +257,8 @@ def a2f(action):
 	return _glob_func_dict.get(action, 
 		lambda x : _ret_error("unknown action!"))
 
+
+# TODO ADD TRY BLOCK
 
 def main():
 	for l in sys.stdin:
