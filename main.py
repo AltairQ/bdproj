@@ -35,9 +35,24 @@ def _init(kvp):
 	# todo fix?
 	tmp = f"CREATE ROLE app WITH PASSWORD '{kvp['password']}' NOCREATEDB NOCREATEROLE LOGIN;"
 	cur.execute(tmp)
+
+	# create tables
 	cur.execute(_xsql("CREATE_TB_USEDIDS"))
-	cur.execute(_xsql("CREATE_TESTFUNC"))
-	cur.execute(_xsql("GRANTEX_TESTFUNC"))	
+	cur.execute(_xsql("CREATE_TB_MEMBERS"))
+	cur.execute(_xsql("CREATE_TB_VOTES"))
+	cur.execute(_xsql("CREATE_TB_ACTIONS"))
+	cur.execute(_xsql("CREATE_TB_PROJECTS"))
+
+	# create functions
+	cur.execute(_xsql("CREATE_TRP_PROJECTS"))
+	cur.execute(_xsql("CREATE_TRP_ACTIONS"))
+	cur.execute(_xsql("CREATE_TRP_MEMBERS"))
+
+	# register triggers
+	cur.execute(_xsql("CREATE_TR_PROJECTS"))
+	cur.execute(_xsql("CREATE_TR_ACTIONS"))
+	cur.execute(_xsql("CREATE_TR_MEMBERS"))
+
 	_glob_db.commit()
 	cur.close()
 	pass
