@@ -43,10 +43,10 @@ def _init(kvp):
 
 	# create tables
 	cur.execute(_xsql("CREATE_TB_USEDIDS"))
-	cur.execute(_xsql("CREATE_TB_MEMBERS"))
-	cur.execute(_xsql("CREATE_TB_VOTES"))
-	cur.execute(_xsql("CREATE_TB_ACTIONS"))
 	cur.execute(_xsql("CREATE_TB_PROJECTS"))
+	cur.execute(_xsql("CREATE_TB_MEMBERS"))
+	cur.execute(_xsql("CREATE_TB_ACTIONS"))
+	cur.execute(_xsql("CREATE_TB_VOTES"))
 
 	# create trigger functions
 	cur.execute(_xsql("CREATE_TRP_PROJECTS"))

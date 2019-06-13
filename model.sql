@@ -47,8 +47,8 @@ CREATE EXTENSION pgcrypto;
 
 --SQL_CREATE_TB_VOTES_START
 CREATE TABLE IF NOT EXISTS votes(
-	member integer NOT NULL,
-	action integer NOT NULL,
+	member integer NOT NULL REFERENCES members(id),
+	action integer NOT NULL REFERENCES actions(id),
 	up boolean NOT NULL
 );
 --SQL_CREATE_TB_VOTES_END
@@ -57,8 +57,8 @@ CREATE TABLE IF NOT EXISTS votes(
 CREATE TABLE IF NOT EXISTS actions(
 	id integer PRIMARY KEY,
 	type integer NOT NULL,
-	project integer NOT NULL,
-	creator integer NOT NULL
+	project integer NOT NULL REFERENCES projects(id),
+	creator integer NOT NULL REFERENCES members(id)
 );
 --SQL_CREATE_TB_ACTIONS_END
 
