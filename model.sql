@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS members(
 CREATE TABLE IF NOT EXISTS votes(
 	member integer NOT NULL,
 	action integer NOT NULL,
-	type integer NOT NULL
+	up boolean NOT NULL
 );
 --SQL_CREATE_TB_VOTES_END
 
@@ -119,8 +119,15 @@ FOR EACH ROW EXECUTE PROCEDURE members_trig();
 -- Procedure for the `votes` on insert trigger
 --SQL_CREATE_TRP_VOTES_START
 CREATE FUNCTION votes_trig() RETURNS TRIGGER AS $$
+	DECLARE
+	v_creator integer;
 	BEGIN
-		
+		v_creator := (SELECT creator FROM actions where id = NEW.action);
+		IF NEW.up = TRUE THEN
+			UPDATE members SET upvotes = upvotes + 1 WHERE id = v_creator;
+		ELSE
+			UPDATE members SET downvotes = downvotes + 1 WHERE id = v_creator;
+		END IF;
 		RETURN NEW;
 	END;
 $$ LANGUAGE plpgsql;

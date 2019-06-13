@@ -47,11 +47,13 @@ def _init(kvp):
 	cur.execute(_xsql("CREATE_TRP_PROJECTS"))
 	cur.execute(_xsql("CREATE_TRP_ACTIONS"))
 	cur.execute(_xsql("CREATE_TRP_MEMBERS"))
+	cur.execute(_xsql("CREATE_TRP_VOTES"))
 
 	# register triggers
 	cur.execute(_xsql("CREATE_TR_PROJECTS"))
 	cur.execute(_xsql("CREATE_TR_ACTIONS"))
 	cur.execute(_xsql("CREATE_TR_MEMBERS"))
+	cur.execute(_xsql("CREATE_TR_VOTES"))
 
 	_glob_db.commit()
 	cur.close()
