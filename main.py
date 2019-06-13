@@ -73,6 +73,7 @@ def _init(kvp):
 	cur.execute(_xsql("CREATE_API_DOWNVOTE"))
 	cur.execute(_xsql("CREATE_API_ACTIONS"))
 	cur.execute(_xsql("CREATE_API_PROJECTS"))
+	cur.execute(_xsql("CREATE_API_VOTES"))
 
 	# grant execute permissions
 	cur.execute(_xsql("GRANTEX_API_LEADER"))
@@ -82,6 +83,7 @@ def _init(kvp):
 	cur.execute(_xsql("GRANTEX_API_DOWNVOTE"))
 	cur.execute(_xsql("GRANTEX_API_ACTIONS"))
 	cur.execute(_xsql("GRANTEX_API_PROJECTS"))
+	cur.execute(_xsql("GRANTEX_API_VOTES"))
 
 	_glob_db.commit()
 	cur.close()
@@ -213,8 +215,20 @@ def projects(kvp):
 
 
 def votes(kvp):
-	pass
+	cur = _glob_db.cursor()
 
+	cur.execute(_xsql("EXECUTE_API_VOTES"),
+			(kvp["timestamp"],
+			kvp["member"],
+			kvp["password"],
+			kvp.get("action", None),
+			kvp.get("project", None)))
+
+	res = cur.fetchall()
+	_ret_data(res)
+
+	_glob_db.commit()
+	cur.close()
 def trolls(kvp):
 	pass
 

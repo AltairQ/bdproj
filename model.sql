@@ -383,6 +383,42 @@ GRANT EXECUTE ON FUNCTION api_projects(epo integer, memid integer, pswd text,
 TO app;
 --SQL_GRANTEX_API_PROJECTS_END
 
+--SQL_CREATE_API_VOTES_START
+CREATE FUNCTION api_votes(epo integer, memid integer, pswd text,
+	aid integer, pid integer)
+RETURNS TABLE (member integer, upvotes bigint, downvotes bigint) AS $$
+BEGIN
+	IF pcreateuser(memid, pswd, FALSE, 
+		to_timestamp(epo)::timestamp without time zone, FALSE) <> 1 THEN
+		RAISE EXCEPTION 'User (%) frozen or not leader', memid;
+	END IF;
+
+	RETURN QUERY
+		SELECT members.id,
+			COUNT(votes.up) filter (WHERE votes.up = TRUE),
+			COUNT(votes.up) filter (WHERE votes.up = FALSE)
+		FROM
+			members
+			LEFT JOIN votes ON votes.member = members.id
+			LEFT JOIN actions ON votes.action = actions.id
+		WHERE
+			(actions.id = aid OR aid IS NULL) AND
+			(actions.project = pid OR pid IS NULL)
+		GROUP BY members.id
+		ORDER BY members.id ASC;
+
+	RETURN;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+--SQL_CREATE_API_VOTES_END
+
+--SQL_GRANTEX_API_VOTES_START
+GRANT EXECUTE ON FUNCTION api_votes(epo integer, memid integer, pswd text,
+	aid integer, pid integer)
+TO app;
+--SQL_GRANTEX_API_VOTES_END
+
+
 
 
 --SQL_EXECUTE_API_LEADER_START
@@ -438,5 +474,13 @@ SELECT * FROM api_projects( %s ::integer,
  %s ::text,
  %s ::integer);
 --SQL_EXECUTE_API_PROJECTS_END
+
+--SQL_EXECUTE_API_VOTES_START
+SELECT * FROM api_votes( %s ::integer,
+ %s ::integer,
+ %s ::text,
+ %s ::integer,
+ %s ::integer );
+--SQL_EXECUTE_API_VOTES_END
 
 
