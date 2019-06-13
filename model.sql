@@ -201,3 +201,67 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION api_leader(epo integer, pswd text, mem integer) 
 TO app;
 --SQL_GRANTEX_API_LEADER_END
+
+--SQL_CREATE_PRIV_ADDACTION_START
+CREATE FUNCTION paddaction(epo integer, memid integer, pswd text,
+	aid integer, pid integer, authority integer, atype integer)
+RETURNS void AS $$
+DECLARE
+	tmp_projid integer;
+BEGIN
+	IF pcreateuser(memid, pswd, FALSE, 
+		to_timestamp(epo)::timestamp without time zone, FALSE) = 0 THEN
+		RAISE EXCEPTION 'User (%) frozen', memid;
+	END IF;
+
+	IF NOT EXISTS (SELECT * from projects WHERE id = pid) THEN
+		INSERT INTO projects (id, authority) VALUES
+			(pid, authority);
+	END IF;
+
+	INSERT INTO actions (id, type, project, creator) VALUES
+		(aid, atype, pid, memid);
+	RETURN;
+END;
+$$ LANGUAGE plpgsql;
+--SQL_CREATE_PRIV_ADDACTION_END
+
+
+--SQL_CREATE_API_SUPPORT_START
+CREATE FUNCTION api_support(epo integer, memid integer, pswd text,
+	aid integer, pid integer, authority integer)
+RETURNS void AS $$
+DECLARE
+	tmp_projid integer;
+BEGIN
+	PERFORM paddaction(epo, memid, pswd, aid, pid, authority, 1);
+	RETURN;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+--SQL_CREATE_API_SUPPORT_END
+
+--SQL_GRANTEX_API_SUPPORT_START
+GRANT EXECUTE ON FUNCTION api_support(epo integer, memid integer, pswd text,
+	aid integer, pid integer, authority integer)
+TO app;
+--SQL_GRANTEX_API_SUPPORT_END
+
+--SQL_CREATE_API_PROTEST_START
+CREATE FUNCTION api_protest(epo integer, memid integer, pswd text,
+	aid integer, pid integer, authority integer)
+RETURNS void AS $$
+DECLARE
+	tmp_projid integer;
+BEGIN
+	PERFORM paddaction(epo, memid, pswd, aid, pid, authority, 0);
+	RETURN;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+--SQL_CREATE_API_PROTEST_END
+
+--SQL_GRANTEX_API_PROTEST_START
+GRANT EXECUTE ON FUNCTION api_protest(epo integer, memid integer, pswd text,
+	aid integer, pid integer, authority integer)
+TO app;
+--SQL_GRANTEX_API_PROTEST_END
+

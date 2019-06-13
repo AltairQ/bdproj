@@ -62,12 +62,17 @@ def _init(kvp):
 
 	# create helper functions
 	cur.execute(_xsql("CREATE_PRIV_CREATEUSER"))
+	cur.execute(_xsql("CREATE_PRIV_ADDACTION"))
 
 	# create api functions
 	cur.execute(_xsql("CREATE_API_LEADER"))
+	cur.execute(_xsql("CREATE_API_SUPPORT"))
+	cur.execute(_xsql("CREATE_API_PROTEST"))
 
 	# grant execute permissions
 	cur.execute(_xsql("GRANTEX_API_LEADER"))
+	cur.execute(_xsql("GRANTEX_API_SUPPORT"))
+	cur.execute(_xsql("GRANTEX_API_PROTEST"))
 
 	_glob_db.commit()
 	cur.close()
