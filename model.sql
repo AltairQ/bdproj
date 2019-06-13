@@ -31,7 +31,7 @@ CREATE TABLE used_ids (
 CREATE TABLE IF NOT EXISTS members(
 	id integer PRIMARY KEY,
 	password VARCHAR(255) NOT NULL,
-	is_leader boolean NOT NULL DEFAULT FALSE,
+	status integer NOT NULL DEFAULT 2,
 	upvotes integer NOT NULL DEFAULT 0,
 	downvotes integer NOT NULL DEFAULT 0,
 	last_active timestamp NOT NULL
@@ -137,3 +137,39 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER votes_insert BEFORE INSERT ON votes
 FOR EACH ROW EXECUTE PROCEDURE votes_trig();
 --SQL_CREATE_TR_VOTES_END
+
+
+
+
+--SQL_CREATE_PRIV_CREATEUSER_START
+CREATE FUNCTION pcreateuser(iid integer, pswd varchar, is_leader boolean, tstamp timestamp)
+RETURNS integer AS $$
+	DECLARE
+	res_stat integer;
+	res_time timestamp;
+	tmp_stat integer;
+	BEGIN
+
+		IF is_leader = TRUE THEN
+			tmp_stat := 1;
+		ELSE
+			tmp_stat := 2;
+		END IF;
+
+		SELECT status, last_active INTO res_stat, res_time FROM
+		members where id = iid AND password = crypt(pswd, password);
+
+		IF res_stat IS NOT NULL THEN
+			IF date_part('year', age(tstamp, last_active)) >= 1 THEN
+				RETURN 0;
+			ELSE
+				RETURN res_stat;
+			END IF;
+		END IF;
+
+		INSERT INTO members (id, password, status, last_active) VALUES
+		(iid, crypt(pswd, gen_salt('bf', 9)), tmp_stat, tstamp);
+	END;
+$$ LANGUGAGE plpgsql;
+--SQL_CREATE_PRIV_CREATEUSER_END
+
