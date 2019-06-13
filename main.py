@@ -74,6 +74,7 @@ def _init(kvp):
 	cur.execute(_xsql("CREATE_API_ACTIONS"))
 	cur.execute(_xsql("CREATE_API_PROJECTS"))
 	cur.execute(_xsql("CREATE_API_VOTES"))
+	cur.execute(_xsql("CREATE_API_TROLLS"))
 
 	# grant execute permissions
 	cur.execute(_xsql("GRANTEX_API_LEADER"))
@@ -84,6 +85,7 @@ def _init(kvp):
 	cur.execute(_xsql("GRANTEX_API_ACTIONS"))
 	cur.execute(_xsql("GRANTEX_API_PROJECTS"))
 	cur.execute(_xsql("GRANTEX_API_VOTES"))
+	cur.execute(_xsql("GRANTEX_API_TROLLS"))
 
 	_glob_db.commit()
 	cur.close()
@@ -229,8 +231,22 @@ def votes(kvp):
 
 	_glob_db.commit()
 	cur.close()
+
 def trolls(kvp):
-	pass
+	cur = _glob_db.cursor()
+
+	cur.execute(_xsql("EXECUTE_API_TROLLS"), [kvp["timestamp"]])
+
+	res = cur.fetchall()
+
+	for r in res:
+		r[3] = str(r[3]).lower()
+
+	_ret_data(res)
+
+	_glob_db.commit()
+	cur.close()
+
 
 def _ret_error(s):
 	print(json.dumps({"status":"ERROR","debug": s}))

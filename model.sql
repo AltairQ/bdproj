@@ -418,6 +418,31 @@ GRANT EXECUTE ON FUNCTION api_votes(epo integer, memid integer, pswd text,
 TO app;
 --SQL_GRANTEX_API_VOTES_END
 
+--SQL_CREATE_API_TROLLS_START
+CREATE FUNCTION api_trolls(epo integer)
+RETURNS TABLE (member integer, upvotes integer, downvotes integer,
+	isactive boolean) AS $$
+BEGIN
+
+	RETURN QUERY
+		SELECT members.id, members.upvotes, members.downvotes, 
+		(date_part('year', age(to_timestamp(epo)::timestamp without time zone,
+			last_active)) < 1)
+		FROM members
+		WHERE members.downvotes > members.upvotes
+		ORDER BY (members.downvotes - members.upvotes) DESC,
+		members.id ASC;
+
+	RETURN;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+--SQL_CREATE_API_TROLLS_END
+
+--SQL_GRANTEX_API_TROLLS_START
+GRANT EXECUTE ON FUNCTION api_trolls(epo integer)
+TO app;
+--SQL_GRANTEX_API_TROLLS_END
+
 
 
 
@@ -483,4 +508,6 @@ SELECT * FROM api_votes( %s ::integer,
  %s ::integer );
 --SQL_EXECUTE_API_VOTES_END
 
-
+--SQL_EXECUTE_API_TROLLS_START
+SELECT * FROM api_trolls( %s ::integer);
+--SQL_EXECUTE_API_TROLLS_END
