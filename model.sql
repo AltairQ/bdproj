@@ -207,10 +207,8 @@ TO app;
 
 --SQL_CREATE_PRIV_ADDACTION_START
 CREATE FUNCTION paddaction(epo integer, memid integer, pswd text,
-	aid integer, pid integer, authority integer, atype integer)
+	aid integer, pid integer, authid integer, atype integer)
 RETURNS void AS $$
-DECLARE
-	tmp_projid integer;
 BEGIN
 	IF pcreateuser(memid, pswd, FALSE, 
 		to_timestamp(epo)::timestamp without time zone, FALSE) = 0 THEN
@@ -219,7 +217,7 @@ BEGIN
 
 	IF NOT EXISTS (SELECT * from projects WHERE id = pid) THEN
 		INSERT INTO projects (id, authority) VALUES
-			(pid, authority);
+			(pid, authid);
 	END IF;
 
 	INSERT INTO actions (id, type, project, creator) VALUES
@@ -232,12 +230,12 @@ $$ LANGUAGE plpgsql;
 
 --SQL_CREATE_API_SUPPORT_START
 CREATE FUNCTION api_support(epo integer, memid integer, pswd text,
-	aid integer, pid integer, authority integer)
+	aid integer, pid integer, authid integer)
 RETURNS void AS $$
 DECLARE
 	tmp_projid integer;
 BEGIN
-	PERFORM paddaction(epo, memid, pswd, aid, pid, authority, 1);
+	PERFORM paddaction(epo, memid, pswd, aid, pid, authid, 1);
 	RETURN;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -245,7 +243,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 --SQL_GRANTEX_API_SUPPORT_START
 GRANT EXECUTE ON FUNCTION api_support(epo integer, memid integer, pswd text,
-	aid integer, pid integer, authority integer)
+	aid integer, pid integer, authid integer)
 TO app;
 --SQL_GRANTEX_API_SUPPORT_END
 
@@ -361,3 +359,36 @@ TO app;
 --SQL_EXECUTE_API_LEADER_START
 SELECT * FROM api_leader(%s, %s, %s);
 --SQL_EXECUTE_API_LEADER_END
+
+--SQL_EXECUTE_API_SUPPORT_START
+SELECT * FROM api_support( %s ::integer,
+ %s ::integer,
+ %s ::text,
+ %s ::integer,
+ %s ::integer,
+ %s ::integer);
+--SQL_EXECUTE_API_SUPPORT_END
+
+
+--SQL_EXECUTE_API_PROTEST_START
+SELECT * FROM api_protest( %s ::integer,
+ %s ::integer,
+ %s ::text,
+ %s ::integer,
+ %s ::integer,
+ %s ::integer);
+--SQL_EXECUTE_API_PROTEST_END
+
+--SQL_EXECUTE_API_UPVOTE_START
+SELECT * FROM api_upvote( %s ::integer,
+ %s ::integer,
+ %s ::text,
+ %s ::integer);
+--SQL_EXECUTE_API_UPVOTE_END
+
+--SQL_EXECUTE_API_DOWNVOTE_START
+SELECT * FROM api_downvote( %s ::integer,
+ %s ::integer,
+ %s ::text,
+ %s ::integer);
+--SQL_EXECUTE_API_DOWNVOTE_END

@@ -70,6 +70,7 @@ def _init(kvp):
 	cur.execute(_xsql("CREATE_API_SUPPORT"))
 	cur.execute(_xsql("CREATE_API_PROTEST"))
 	cur.execute(_xsql("CREATE_API_UPVOTE"))
+	cur.execute(_xsql("CREATE_API_DOWNVOTE"))
 	cur.execute(_xsql("CREATE_API_ACTIONS"))
 
 	# grant execute permissions
@@ -77,6 +78,7 @@ def _init(kvp):
 	cur.execute(_xsql("GRANTEX_API_SUPPORT"))
 	cur.execute(_xsql("GRANTEX_API_PROTEST"))
 	cur.execute(_xsql("GRANTEX_API_UPVOTE"))
+	cur.execute(_xsql("GRANTEX_API_DOWNVOTE"))
 	cur.execute(_xsql("GRANTEX_API_ACTIONS"))
 
 	_glob_db.commit()
@@ -94,7 +96,9 @@ def leader(kvp):
 	cur = _glob_db.cursor()
 
 	cur.execute(_xsql("EXECUTE_API_LEADER"),
-		(kvp["timestamp"], kvp["password"], kvp["member"]))
+		(kvp["timestamp"],
+			kvp["password"],
+			kvp["member"]))
 	_ret_ok()
 
 	_glob_db.commit()
@@ -102,16 +106,62 @@ def leader(kvp):
 	pass
 
 def support(kvp):
-	pass
+	cur = _glob_db.cursor()
+
+	cur.execute(_xsql("EXECUTE_API_SUPPORT"),
+			(kvp["timestamp"],
+			kvp["member"],
+			kvp["password"],
+			kvp["action"],
+			kvp["project"],
+			kvp.get("authority", None) ))
+	_ret_ok()
+
+	_glob_db.commit()
+	cur.close()
+	
 
 def protest(kvp):
-	pass
+	cur = _glob_db.cursor()
+
+	cur.execute(_xsql("EXECUTE_API_PROTEST"),
+			(kvp["timestamp"],
+			kvp["member"],
+			kvp["password"],
+			kvp["action"],
+			kvp["project"],
+			kvp.get("authority", None) ))
+	_ret_ok()
+
+	_glob_db.commit()
+	cur.close()
+
 
 def upvote(kvp):
-	pass
+	cur = _glob_db.cursor()
+
+	cur.execute(_xsql("EXECUTE_API_UPVOTE"),
+			(kvp["timestamp"],
+			kvp["member"],
+			kvp["password"],
+			kvp["action"]))
+	_ret_ok()
+
+	_glob_db.commit()
+	cur.close()
 
 def downvote(kvp):
-	pass
+	cur = _glob_db.cursor()
+
+	cur.execute(_xsql("EXECUTE_API_DOWNVOTE"),
+			(kvp["timestamp"],
+			kvp["member"],
+			kvp["password"],
+			kvp["action"]))
+	_ret_ok()
+
+	_glob_db.commit()
+	cur.close()
 
 def actions(kvp):
 	pass
@@ -163,12 +213,15 @@ def a2f(action):
 def main():
 	for l in sys.stdin:
 		line = l.rstrip()
-		try:
-			obj = json.loads(line) # safe from code injection
-			act = next(iter(obj)) # extract "action" attr
-			(a2f(act))(obj[act]) # execute handler
-		except Exception as e:
-			_ret_error(str(e))
+		obj = json.loads(line) # safe from code injection
+		act = next(iter(obj)) # extract "action" attr
+		(a2f(act))(obj[act]) # execute handler
+		# try:
+		# 	obj = json.loads(line) # safe from code injection
+		# 	act = next(iter(obj)) # extract "action" attr
+		# 	(a2f(act))(obj[act]) # execute handler
+		# except Exception as e:
+		# 	_ret_error(str(e))
 
 
 if __name__ == '__main__':
@@ -179,5 +232,5 @@ if __name__ == '__main__':
 	if "--init" in sys.argv: # check if init mode is set
 		_glob_is_init = True
 		log("* init on")
-		
+
 	main()
