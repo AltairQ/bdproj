@@ -10,7 +10,7 @@
 -- backend will salt and hash it.
 -- Also, pg8000 driver does support this auth method.
 
--- note: this template is not used because DCL stmts cannot be parametrized
+-- note: this template is not used because DCL stmts cannot be parameterized
 --SQL_CREATEAPPUSER_START
 CREATE USER app WITH PASSWORD %s NOCREATEDB NOCREATEROLE LOGIN;
 --SQL_CREATEAPPUSER_END
@@ -28,6 +28,7 @@ $$
 SELECT 123;
 $$ LANGUAGE SQL SECURITY DEFINER;
 --SQL_CREATE_TESTFUNC_END
+
 
 --SQL_GRANTEX_TESTFUNC_START
 GRANT EXECUTE ON FUNCTION test() TO app;
