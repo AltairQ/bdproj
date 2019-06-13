@@ -69,11 +69,15 @@ def _init(kvp):
 	cur.execute(_xsql("CREATE_API_LEADER"))
 	cur.execute(_xsql("CREATE_API_SUPPORT"))
 	cur.execute(_xsql("CREATE_API_PROTEST"))
+	cur.execute(_xsql("CREATE_API_UPVOTE"))
+	cur.execute(_xsql("CREATE_API_ACTIONS"))
 
 	# grant execute permissions
 	cur.execute(_xsql("GRANTEX_API_LEADER"))
 	cur.execute(_xsql("GRANTEX_API_SUPPORT"))
 	cur.execute(_xsql("GRANTEX_API_PROTEST"))
+	cur.execute(_xsql("GRANTEX_API_UPVOTE"))
+	cur.execute(_xsql("GRANTEX_API_ACTIONS"))
 
 	_glob_db.commit()
 	cur.close()
@@ -84,8 +88,17 @@ def oopen(kvp):
 	_open_conn(kvp["login"], kvp["password"], kvp["database"])
 	if _glob_is_init:
 		_init(kvp)
+	_ret_ok()
 
 def leader(kvp):
+	cur = _glob_db.cursor()
+
+	cur.execute(_xsql("EXECUTE_API_LEADER"),
+		(kvp["timestamp"], kvp["password"], kvp["member"]))
+	_ret_ok()
+
+	_glob_db.commit()
+	cur.close()
 	pass
 
 def support(kvp):
@@ -114,6 +127,9 @@ def trolls(kvp):
 
 def _ret_error(s):
 	print(json.dumps({"status":"ERROR","debug": s}))
+
+def _ret_ok():
+	print(json.dumps({"status":"OK"}))
 
 # connect to psql server @localhost
 def _open_conn(user, pswd, db):
@@ -159,6 +175,7 @@ if __name__ == '__main__':
 	if "--debug" in sys.argv:
 		_glob_debug = True
 		log("* debug on")
+
 	if "--init" in sys.argv: # check if init mode is set
 		_glob_is_init = True
 		log("* init on")

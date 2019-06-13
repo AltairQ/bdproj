@@ -286,4 +286,78 @@ END;
 $$ LANGUAGE plpgsql;
 --SQL_CREATE_PRIV_ADDVOTE_END
 
+--SQL_CREATE_API_UPVOTE_START
+CREATE FUNCTION api_upvote(epo integer, memid integer, pswd text,
+	aid integer)
+RETURNS void AS $$
+BEGIN
+	PERFORM paddvote(epo, memid, pswd, aid, TRUE);
+	RETURN;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+--SQL_CREATE_API_UPVOTE_END
 
+--SQL_GRANTEX_API_UPVOTE_START
+GRANT EXECUTE ON FUNCTION api_upvote(epo integer, memid integer, pswd text,
+	aid integer)
+TO app;
+--SQL_GRANTEX_API_UPVOTE_END
+
+--SQL_CREATE_API_DOWNVOTE_START
+CREATE FUNCTION api_downvote(epo integer, memid integer, pswd text,
+	aid integer)
+RETURNS void AS $$
+BEGIN
+	PERFORM paddvote(epo, memid, pswd, aid, FALSE);
+	RETURN;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+--SQL_CREATE_API_DOWNVOTE_END
+
+--SQL_GRANTEX_API_DOWNVOTE_START
+GRANT EXECUTE ON FUNCTION api_downvote(epo integer, memid integer, pswd text,
+	aid integer)
+TO app;
+--SQL_GRANTEX_API_DOWNVOTE_END
+
+--SQL_CREATE_API_ACTIONS_START
+CREATE FUNCTION api_actions(epo integer, memid integer, pswd text,
+	ftype text, fpid integer, fauth integer) 
+RETURNS TABLE (action integer, type integer, project integer, 
+	authority integer, upvotes integer, downvotes integer)
+AS $$
+BEGIN
+	IF pcreateuser(memid, pswd, FALSE, 
+		to_timestamp(epo)::timestamp without time zone, FALSE) <> 1 THEN
+		RAISE EXCEPTION 'User (%) frozen or not leader', memid;
+	END IF;
+
+	RETURN QUERY
+		SELECT actions.id, actions.type, actions.project, projects.authority,
+			COUNT(votes.up) filter (WHERE votes.up = TRUE),
+			COUNT(votes.up) filter (WHERE votes.up = FALSE)
+		FROM actions JOIN projects ON actions.project = projects.id
+			JOIN votes ON votes.action = actions.id
+		WHERE
+			(actions.type = ftype OR ftype IS NULL) AND
+			(projects.id = fpid OR fpid IS NULL) AND
+			(projects.authority = fauth OR fauth IS NULL)
+		GROUP BY
+			actions.id, actions.type, actions.project, projects.authority
+		ORDER BY actions.id ASC;
+
+	RETURN;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+--SQL_CREATE_API_ACTIONS_END
+
+--SQL_GRANTEX_API_ACTIONS_START
+GRANT EXECUTE ON FUNCTION api_actions(epo integer, memid integer, pswd text,
+	ftype text, fpid integer, fauth integer) 
+TO app;
+--SQL_GRANTEX_API_ACTIONS_END
+
+
+--SQL_EXECUTE_API_LEADER_START
+SELECT * FROM api_leader(%s, %s, %s);
+--SQL_EXECUTE_API_LEADER_END
