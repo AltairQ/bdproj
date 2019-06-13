@@ -257,8 +257,6 @@ def _ret_ok():
 def _ret_data(d):
 	print(json.dumps({"status":"OK", "data":d}))
 
-
-
 # connect to psql server @localhost
 def _open_conn(user, pswd, db):
 	try:
@@ -293,15 +291,12 @@ def a2f(action):
 def main():
 	for l in sys.stdin:
 		line = l.rstrip()
-		obj = json.loads(line) # safe from code injection
-		act = next(iter(obj)) # extract "action" attr
-		(a2f(act))(obj[act]) # execute handler
-		# try:
-		# 	obj = json.loads(line) # safe from code injection
-		# 	act = next(iter(obj)) # extract "action" attr
-		# 	(a2f(act))(obj[act]) # execute handler
-		# except Exception as e:
-		# 	_ret_error(str(e))
+		try:
+			obj = json.loads(line) # safe from code injection
+			act = next(iter(obj)) # extract "action" attr
+			(a2f(act))(obj[act]) # execute handler
+		except Exception as e:
+			_ret_error(str(e))
 
 
 if __name__ == '__main__':
