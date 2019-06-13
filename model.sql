@@ -49,7 +49,8 @@ CREATE EXTENSION pgcrypto;
 CREATE TABLE IF NOT EXISTS votes(
 	member integer NOT NULL REFERENCES members(id),
 	action integer NOT NULL REFERENCES actions(id),
-	up boolean NOT NULL
+	up boolean NOT NULL,
+	PRIMARY KEY(member, action)
 );
 --SQL_CREATE_TB_VOTES_END
 
@@ -174,6 +175,8 @@ RETURNS integer AS $$
 			IF date_part('year', age(tstamp, res_time)) >= 1 THEN
 				RETURN 0;
 			ELSE
+				UPDATE members SET last_active = tstamp WHERE
+					id = iid;
 				RETURN res_stat;
 			END IF;
 		END IF;
@@ -264,4 +267,23 @@ GRANT EXECUTE ON FUNCTION api_protest(epo integer, memid integer, pswd text,
 	aid integer, pid integer, authority integer)
 TO app;
 --SQL_GRANTEX_API_PROTEST_END
+
+--SQL_CREATE_PRIV_ADDVOTE_START
+CREATE FUNCTION paddvote(epo integer, memid integer, pswd text,
+	aid integer, up boolean)
+RETURNS void AS $$
+BEGIN
+	IF pcreateuser(memid, pswd, FALSE, 
+		to_timestamp(epo)::timestamp without time zone, FALSE) = 0 THEN
+		RAISE EXCEPTION 'User (%) frozen', memid;
+	END IF;
+
+	INSERT INTO votes (member, action, up) VALUES
+		(memid, aid, up);
+
+	RETURN;
+END;
+$$ LANGUAGE plpgsql;
+--SQL_CREATE_PRIV_ADDVOTE_END
+
 

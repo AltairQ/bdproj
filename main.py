@@ -63,6 +63,7 @@ def _init(kvp):
 	# create helper functions
 	cur.execute(_xsql("CREATE_PRIV_CREATEUSER"))
 	cur.execute(_xsql("CREATE_PRIV_ADDACTION"))
+	cur.execute(_xsql("CREATE_PRIV_ADDVOTE"))
 
 	# create api functions
 	cur.execute(_xsql("CREATE_API_LEADER"))
