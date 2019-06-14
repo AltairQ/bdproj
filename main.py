@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 import json
 import re
@@ -8,7 +10,7 @@ import pg8000
 _glob_db = None
 _glob_is_init = False
 _glob_debug = False
-
+_glob_inst_crypto = False
 
 # helper function for printing debug messages
 def log(s):
@@ -32,13 +34,13 @@ def _init(kvp):
 
 	# very ugly but it can't be parametrized
 	# besides, at this point the user already knows init password
-	# todo fix?
 	tmp = f"CREATE ROLE app WITH PASSWORD '{kvp['password']}' NOCREATEDB NOCREATEROLE LOGIN;"
 	cur.execute(tmp)
 
 	# install pgcrypto
-	# only in debug mode because it requires SUPERUSER role
-	if _glob_debug:
+	# only in special mode because it requires SUPERUSER role
+	if _glob_inst_crypto:
+		log("* installing pgcrypto in the current db")
 		cur.execute(_xsql("INSTALL_PGCRYPTO"))
 
 	# create tables
@@ -285,9 +287,6 @@ def a2f(action):
 	return _glob_func_dict.get(action, 
 		lambda x : _ret_error("unknown action!"))
 
-
-# TODO ADD TRY BLOCK
-
 def main():
 	for l in sys.stdin:
 		line = l.rstrip()
@@ -303,6 +302,10 @@ if __name__ == '__main__':
 	if "--debug" in sys.argv:
 		_glob_debug = True
 		log("* debug on")
+
+	if "--install_crypto" in sys.argv:
+		_glob_inst_crypto = True
+		log("* will install the pgcrypto extensions")
 
 	if "--init" in sys.argv: # check if init mode is set
 		_glob_is_init = True
