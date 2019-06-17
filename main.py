@@ -295,6 +295,7 @@ def main():
 			act = next(iter(obj)) # extract "action" attr
 			(a2f(act))(obj[act]) # execute handler
 		except Exception as e:
+			_glob_db.rollback()
 			_ret_error(str(e))
 
 
